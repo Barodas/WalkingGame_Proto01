@@ -5,7 +5,7 @@ signal hover_exit
 
 var base_size = 10
 var hover_size = 15
-
+var line_width = 6
 
 func set_size(value):
 	$ColorRect.margin_left = -value
@@ -18,7 +18,7 @@ func set_line(target_position):
 	# figure out angle and length of line to target_position
 	$Line.visible = true
 	$Line.set_rotation(target_position.angle_to_point(position))
-	$Line.set_size(Vector2(position.distance_to(target_position), 10))
+	$Line.set_size(Vector2(position.distance_to(target_position), line_width))
 
 
 func _ready():
