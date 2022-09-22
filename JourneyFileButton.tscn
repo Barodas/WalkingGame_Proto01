@@ -1,0 +1,6 @@
+[gd_scene format=2]
+
+[node name="JourneyFileButton" type="ToolButton"]
+margin_right = 12.0
+margin_bottom = 22.0
+text = "journey_datetime"

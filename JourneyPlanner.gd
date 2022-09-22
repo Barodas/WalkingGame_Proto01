@@ -7,7 +7,7 @@ var mouse_position
 var hovered_node
 
 var node_list =  []
-
+var journey_file_list = []
 
 func save(data):
 	var file = File.new()
@@ -18,6 +18,21 @@ func save(data):
 	file.store_line(to_json(data))
 	file.close()
 	print("File saved to: ", file_name)
+
+
+func load_journey_list():
+	for file in journey_file_list:
+		file.queue_free()
+	journey_file_list.clear()
+	
+	for _i in range(0, 20, 1):
+		var button = ToolButton.new()
+		button.text = "Some button"
+		journey_file_list.push_back(button)
+		$UIPanel/ScrollContainer/VBoxContainer.add_child(button)
+
+func _ready():
+	load_journey_list()
 
 
 func _process(_delta):
@@ -95,3 +110,7 @@ func _on_PathNode_hover_exit(_hovered):
 
 func _on_TimeInput_text_changed():
 	pass
+
+
+func _on_Refresh_pressed():
+	load_journey_list()

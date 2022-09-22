@@ -2,6 +2,7 @@ extends Node
 
 export (PackedScene) var start_scene
 export (PackedScene) var journey_planner_scene
+export (PackedScene) var expedition_scene
 
 var current_scene
 
@@ -16,6 +17,8 @@ func load_start():
 	add_child(current_scene)
 	var button = current_scene.get_node("JourneyPlannerButton")
 	button.connect("pressed", self, "_on_Journey_Planner_Button_pressed")
+	button = current_scene.get_node("ExpeditionButton")
+	button.connect("pressed", self, "_on_Expedition_Button_pressed")
 
 
 func load_journey_planner():
@@ -27,12 +30,24 @@ func load_journey_planner():
 	button.connect("pressed", self, "_on_Return_Button_pressed")
 
 
+func load_expedition():
+	unload_current_scene()
+	
+	current_scene = expedition_scene.instance()
+	add_child(current_scene)
+	var button = current_scene.get_node("UIPanel/Return")
+	button.connect("pressed", self, "_on_Return_Button_pressed")
+
 func _ready():
 	load_start()
 
 
 func _on_Journey_Planner_Button_pressed():
 	load_journey_planner()
+
+
+func _on_Expedition_Button_pressed():
+	load_expedition()
 
 
 func _on_Return_Button_pressed():
