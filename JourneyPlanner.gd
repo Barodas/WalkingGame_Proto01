@@ -25,13 +25,58 @@ func load_journey_list():
 		file.queue_free()
 	journey_file_list.clear()
 	
-	for _i in range(0, 20, 1):
+	var files = []
+	var dir = Directory.new()
+	dir.open("user://")
+	dir.list_dir_begin()
+	
+	while true:
+		var file = dir.get_next()
+		if file.begins_with("journey_"):
+			files.append(file)
+		if file == "":
+			break
+	
+	dir.list_dir_end()
+	
+	for file in files:
 		var button = ToolButton.new()
 		button.text = "Some button"
 		journey_file_list.push_back(button)
 		$UIPanel/ScrollContainer/VBoxContainer.add_child(button)
+	
+	# send journey to game using event
+	# add confirmation that a journey has been selected
+
+func load_map():
+	var file
+	var dir = Directory.new()
+	dir.open("user://")
+	dir.list_dir_begin()
+	
+	while true:
+		file = dir.get_next()
+		if file.begins_with("map_"):
+			break
+		if file == "":
+			break
+	
+	dir.list_dir_end()
+	
+	var file_path = "user://" + file
+	var image = Image.new()
+	var error = image.load(file_path)
+	if error != OK:
+		pass # handle failure, warn user
+	var texture = ImageTexture.new()
+	texture.create_from_image(image, 0)
+	$Map.texture = texture
+	# add text with map filename/error if missing map
+	# load map texture into object
+	# send event to game with map texture
 
 func _ready():
+	load_map()
 	load_journey_list()
 
 
