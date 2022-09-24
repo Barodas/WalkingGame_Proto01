@@ -2,12 +2,17 @@ extends CanvasLayer
 
 export (PackedScene) var path_node_scene
 
+signal set_journey(map_texture, journey)
+
 var is_tracking = false
 var mouse_position
 var hovered_node
 
 var node_list =  []
 var journey_file_list = []
+
+var loaded_map_texture
+var loaded_journey
 
 func save(data):
 	var file = File.new()
@@ -41,12 +46,17 @@ func load_journey_list():
 	
 	for file in files:
 		var button = ToolButton.new()
-		button.text = "Some button"
+		var display_name = file.replace("journey_", "")
+		display_name = display_name.replace(".json", "")
+		button.text = display_name
 		journey_file_list.push_back(button)
 		$UIPanel/ScrollContainer/VBoxContainer.add_child(button)
+		button.connect("pressed", self, "_on_Journey_Button_pressed")
 	
-	# send journey to game using event
-	# add confirmation that a journey has been selected
+	# TODO: Selecting a journey should display it on the map
+	# TODO: Send selected map to game
+	# TODO: Clear indication of selected journey
+
 
 func load_map():
 	var file
@@ -67,13 +77,13 @@ func load_map():
 	var image = Image.new()
 	var error = image.load(file_path)
 	if error != OK:
-		pass # handle failure, warn user
+		pass # TODO: Warn user that map hasnt loaded
 	var texture = ImageTexture.new()
 	texture.create_from_image(image, 0)
 	$Map.texture = texture
-	# add text with map filename/error if missing map
-	# load map texture into object
-	# send event to game with map texture
+	loaded_map_texture = texture
+	$UIPanel/MapLabel.text = file
+
 
 func _ready():
 	load_map()
@@ -154,8 +164,17 @@ func _on_PathNode_hover_exit(_hovered):
 
 
 func _on_TimeInput_text_changed():
-	pass
+	pass # TODO: Validate input is valid HH:MM Time
 
 
 func _on_Refresh_pressed():
 	load_journey_list()
+
+
+func _on_LoadMap_pressed():
+	load_map()
+
+
+func _on_Journey_Button_pressed():
+	emit_signal("set_journey", loaded_map_texture, loaded_journey)
+
