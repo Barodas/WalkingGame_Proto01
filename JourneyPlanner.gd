@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 export (PackedScene) var path_node_scene
+export (PackedScene) var journey_file_button_scene
 
 signal set_journey(map_texture, journey)
 
@@ -8,11 +9,13 @@ var is_tracking = false
 var mouse_position
 var hovered_node
 
-var node_list =  []
+var node_list = []
 var journey_file_list = []
 
 var loaded_map_texture
-var loaded_journey
+var loaded_journey = []
+
+var preview_selected_journey
 
 func save(data):
 	var file = File.new()
@@ -45,13 +48,11 @@ func load_journey_list():
 	dir.list_dir_end()
 	
 	for file in files:
-		var button = ToolButton.new()
-		var display_name = file.replace("journey_", "")
-		display_name = display_name.replace(".json", "")
-		button.text = display_name
+		var button = journey_file_button_scene.instance()
+		button.initialise(file)
 		journey_file_list.push_back(button)
 		$UIPanel/ScrollContainer/VBoxContainer.add_child(button)
-		button.connect("pressed", self, "_on_Journey_Button_pressed")
+		button.connect("file_selected", self, "_on_File_Selected")
 	
 	# TODO: Selecting a journey should display it on the map
 	# TODO: Send selected map to game
@@ -77,12 +78,35 @@ func load_map():
 	var image = Image.new()
 	var error = image.load(file_path)
 	if error != OK:
-		pass # TODO: Warn user that map hasnt loaded
+		print("ERROR: Failed to load map")
+		return
 	var texture = ImageTexture.new()
 	texture.create_from_image(image, 0)
 	$Map.texture = texture
 	loaded_map_texture = texture
 	$UIPanel/MapLabel.text = file
+
+
+func set_journey():
+	# TODO: Check for invalid map/journey
+	emit_signal("set_journey", loaded_map_texture, loaded_journey)
+	show_preview()
+
+
+func show_preview():
+	if node_list.size() > 0:
+		remove_nodes(node_list.front())
+	
+	for position in loaded_journey:
+		var node = path_node_scene.instance()
+#		node.connect("hover_enter", self, "_on_PathNode_hover_enter")
+#		node.connect("hover_exit", self, "_on_PathNode_hover_exit")
+		node.get_node("ColorRect").visible = false
+		node.position = position
+		if !node_list.empty():
+			node.set_line(node_list.back().position)
+		node_list.push_back(node)
+		add_child(node)
 
 
 func _ready():
@@ -98,14 +122,18 @@ func _process(_delta):
 	
 	# Remove hovered node
 	if Input.is_action_pressed("click_right") and hovered_node != null:
-		print("Removing Hovered Node")
-		var hovered_index = node_list.find(hovered_node)
-		var node_list_size = node_list.size()
-		for _i in range(node_list_size, hovered_index, -1):
-			var node = node_list.pop_back()
-			node.queue_free()
+		remove_nodes(hovered_node)
 		hovered_node = null
-		print("Removed ", node_list_size - hovered_index, " Nodes")
+
+
+func remove_nodes(target_node):
+	print("Removing Hovered Node")
+	var target_index = node_list.find(target_node)
+	var node_list_size = node_list.size()
+	for _i in range(node_list_size, target_index, -1):
+		var node = node_list.pop_back()
+		node.queue_free()
+	print("Removed ", node_list_size - target_index, " Nodes")
 
 
 func _on_CreateJourney_pressed():
@@ -125,13 +153,21 @@ func _on_FinishJourney_pressed():
 	
 	var node_positions = []
 	for node in node_list:
-		node_positions.push_back(node.position)
+		loaded_journey.push_back(node.position)
+		node_positions.push_back({
+			"x" : node.position.x,
+			"y" : node.position.y
+			})
 	
 	var output = {
 		"time" : $UIPanel/TimeInput.text,
 		"nodes" : node_positions
 	}
 	save(output)
+	
+	remove_nodes(node_list.front())
+	set_journey()
+	load_journey_list()
 
 
 func _on_Map_gui_input(event):
@@ -175,6 +211,22 @@ func _on_LoadMap_pressed():
 	load_map()
 
 
-func _on_Journey_Button_pressed():
-	emit_signal("set_journey", loaded_map_texture, loaded_journey)
+func _on_File_Selected(name):
+	if is_tracking == true:
+		return
+	
+	# TODO: Load time and pass to game as well
+	
+	var file_name = "user://" + name
+	var file = File.new()
+	if not file.file_exists(file_name):
+		return
+	file.open(file_name, File.READ)
+	var data = parse_json(file.get_as_text())
+	var nodes = []
+	for node in data.nodes:
+		nodes.push_back(Vector2(node.x, node.y))
+	loaded_journey = nodes
+	
+	set_journey()
 
